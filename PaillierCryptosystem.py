@@ -1,113 +1,113 @@
 # Medya HAN
-# PAILLIER SIFRELEMESİ
+# PAILLIER CRYPTOSYSTEM
 
 import random
 import math
 
-def ebob(a, b):
+def gcd(a, b): # Greatest Common Divisor
   while b > 0:
     a, b = b, a % b
   return a
 
-def ekok(a, b):
-  return a * b // ebob(a, b)
+def lcm(a, b): # Least Common Multiple
+  return a * b // gcd(a, b)
 
 def L(u, n):
   return ((u - 1) // n)
 
-def asal_mi(u, T): # Asal olup olmama kontrolu yapan fonksiyon
+def isPrime(u, T): # Function controlling whether or not prime
     v = 0
     w = u - 1
     while(w % 2 == 0):
         v += 1
         w = w // 2
     for _ in range(1, T + 1):
-        sonraki = False
+        nextt = False
         a = random.randint(2, u - 1)
         b = pow(a, w, u)
         if(b == 1 or b == u - 1):
-            sonraki = True
+            nextt = True
             continue
         for _ in range(1, v):
             b = (b ** 2) % u
             if(b == u - 1):
-                sonraki = True
+                nextt = True
                 break
             if(b == 1):
                 return False
-        if(not sonraki):
+        if(not nextt):
             return False
     return True
 
-def asal_olustur(bit): # Verilen bite gore asal sayi olusturan fonksiyon
-    taban = (1 << bit) + 1
-    tavan = (1 << (bit + 1)) - 1
+def createPrime(bit): # Function creating prime number for the given bit
+    low = (1 << bit) + 1
+    high = (1 << (bit + 1)) - 1
 
     while(True):
-        asal = random.randint(taban, tavan)
-        if(asal % 2 == 1 and asal_mi(asal, 15)):
-            return asal
+        prime = random.randint(low, high)
+        if(prime % 2 == 1 and isPrime(prime, 15)):
+            return prime
 
-def tersini_al(a, n): # Bir sayinin tersini almaya yaran fonksiyon
-    s, eski_s = 0, 1
-    t, eski_t = 1, 0
-    r, eski_r = n, a
+def reciprocal(a, n): # Function that takes the reciprocal of a number
+    s, old_s = 0, 1
+    t, old_t = 1, 0
+    r, old_r = n, a
 
     while r != 0:
-        q = eski_r // r
-        eski_r, r = r, eski_r - q * r
-        eski_s, s = s, eski_s - q * s
-        eski_t, t = t, eski_t - q * t
+        q = old_r // r
+        old_r, r = r, old_r - q * r
+        old_s, s = s, old_s - q * s
+        old_t, t = t, old_t - q * t
 
-    return (eski_s % n)
+    return (old_s % n)
 
-def g_olustur(n): # g anahtarini rastgele olusturan fonksiyon
+def createG(n): # Function that creates the key g randomly
     g = random.randint(1, n - 1)
-    while(ebob(g, n) != 1):
+    while(gcd(g, n) != 1):
         g = random.randint(1, n - 1)
     return g
 
-def textToDecimal(text): # Bir text mesajini decimal hale donusturen fonksiyon
-    liste = []
-    yeni = []
+def textToDecimal(text): # Function that converts a text message to decimal
+    list = []
+    new = []
     for i in text:
-        liste.append(format(ord(i)))
+        list.append(format(ord(i)))
 
-    for j in liste:
+    for j in list:
         if (len(j) == 2):
-            yeni.append("0")
-            yeni.append(j)
+            new.append("0")
+            new.append(j)
         else:
-            yeni.append(j)
-    return ''.join(yeni)
+            new.append(j)
+    return ''.join(new)
 
-def decimalToText(decimal): # Decimal haldeki mesaji tekrardan text haline getiren fonksiyon
-    liste = []
-    yeni = []
+def decimalToText(decimal): # Function that converts a decimal message to text
+    list = []
+    new = []
     i = 0
     while(i != len(decimal)):
-        liste.append(''.join(decimal[i: (i + 3)]))
+        list.append(''.join(decimal[i: (i + 3)]))
         i = i + 3
-    for j in liste:
-        yeni.append(chr(int(j)))
-    return ''.join(yeni)
+    for j in list:
+        new.append(chr(int(j)))
+    return ''.join(new)
 
-def keygen(bit): # publickey ve privatekey olmak uzere n,g,Lambda ve Mu anahtarlarini olusturan fonksiyon
-    p = asal_olustur(int(bit / 2))
-    q = asal_olustur(int(bit / 2))
-    while(ebob(p * q, (p - 1) * (q - 1)) != 1):
-        p = asal_olustur(int(bit / 2))
-        q = asal_olustur(int(bit / 2))
+def keygen(bit): # Function that creates the publickey (n, g) and privatekey (Lambda, Mu) keys.
+    p = createPrime(int(bit / 2))
+    q = createPrime(int(bit / 2))
+    while(gcd(p * q, (p - 1) * (q - 1)) != 1):
+        p = createPrime(int(bit / 2))
+        q = createPrime(int(bit / 2))
     n = p * q
 
-    Lambda = ekok(p-1, q-1)
+    Lambda = lcm(p-1, q-1)
 
-    g = g_olustur(n*n) # Rastgele bir g sayisi olusturulur
-    while(ebob(L(pow(g, Lambda, n*n), n), n) != 1):
-        g = g_olustur(n*n)
+    g = createG(n*n) # A random g is created
+    while(gcd(L(pow(g, Lambda, n*n), n), n) != 1):
+        g = createG(n*n)
 
     k = L(pow(g, Lambda, n*n), n)
-    Mu = tersini_al(k, n) % n
+    Mu = reciprocal(k, n) % n
 
     publickey = open("publickey.txt", "w")
     publickey.write(str(n) + "\n")
@@ -126,30 +126,30 @@ def keygen(bit): # publickey ve privatekey olmak uzere n,g,Lambda ve Mu anahtarl
     print("g: ", g)
     print("Lambda: ", Lambda)
     print("Mu: ", Mu)
-    print("\n** Anahtarlar olusturuldu..")
+    print("\n** Keys created successfully..")
 
 
 def encrypt(plaintexttxt, publickeytxt):
     try:
         publickey = open(publickeytxt, "r")
     except FileNotFoundError:
-        print("Sifreleyecek anahtar bulunmadigindan ilk olarak keygen(n) fonksiyonu cagirilmalidir..")
+        print("Keygen(n) function should be called first because there are no keys to encrypt..")
 
     n = int(publickey.readline())
     g = int(publickey.readline())
     publickey.close()
 
-    plaintext = open(plaintexttxt, "r") # En basta girilen mesaj decimala cevrilir
+    plaintext = open(plaintexttxt, "r") # The message entered at the beginning is converted to decimal
     mesaj = plaintext.readline()
     m = int(textToDecimal(mesaj))
     plaintext.close()
 
     if(m < 0 or m >= n):
-        raise Exception("Mesaj 0'dan kucuk ve n'den buyuk olamaz..")
+        raise Exception("Message cannot be smaller than '0' and larger than 'n'..")
 
-    r = asal_olustur(int(math.log2(n))) # Rastgele bir r asal sayisi olusturulur
+    r = createPrime(int(math.log2(n))) # A random r is created
     while(r > n - 1):
-        r = asal_olustur(int(math.log2(n)))
+        r = createPrime(int(math.log2(n)))
 
     c = (pow(g, m, n*n) * pow(r, n, n*n)) % (n*n)
     ciphertext = open("ciphertext", "w")
@@ -159,23 +159,23 @@ def encrypt(plaintexttxt, publickeytxt):
     print("\n================================\nEncrypt:\n")
     print("r: ", r)
     print("ciphertext: ", c)
-    print("\n** Sifreleme islemi yapildi..")
+    print("\n** Encryption is done..")
 
 def decrypt(ciphertexttxt, privatekeytxt):
     try:
         privatekey = open(privatekeytxt, "r")
     except FileNotFoundError:
-        print("Sifreleyecek anahtar bulunmadigindan ilk olarak keygen(n) fonksiyonu cagirilmalidir..")
+        print("Keygen(n) function should be called first because there are no keys to decrypt..")
 
     try:
         ciphertext = open(ciphertexttxt, "r")
     except FileNotFoundError:
-        print("Desifrelenecek ciphertext bulunmadigindan ilk olarak encrypt() fonksiyonu cagirilmalidir..")
+        print("Keygen(n) function should be called first because there are no keys to decrypt..")
 
     try:
         publickey = open("publickey.txt", "r")
     except FileNotFoundError:
-        print("Sifreleyecek anahtar bulunmadigindan ilk olarak keygen(n) fonksiyonu cagirilmalidir..")
+        print("Keygen(n) function should be called first because there are no keys to decrypt..")
 
     Lambda = int(privatekey.readline())
     Mu = int(privatekey.readline())
@@ -187,50 +187,50 @@ def decrypt(ciphertexttxt, privatekeytxt):
     c = int(ciphertext.readline())
     ciphertext.close()
 
-    if(ebob(c, n*n) != 1):
-        print("Hatali ciphertext..")
+    if(gcd(c, n*n) != 1):
+        print("Faulty ciphertext..")
 
-    if(c < 1 or c >= n*n or ebob(c, n*n) != 1):
-        raise Exception("Ciphertext Z*n^2 grubunun icinde yer almali..")
+    if(c < 1 or c >= n*n or gcd(c, n*n) != 1):
+        raise Exception("Ciphertext should be included in Z * n ^ 2..")
 
     m = (L(pow(c, Lambda, n*n), n) * Mu) % n
-    mesaj = decimalToText(str(m)) # Decimal haldeki m mesaji text hale getirilir
+    message = decimalToText(str(m)) # m message in decimal state is converted to text
 
-    plaintext2 = open("plaintext2", "w") # Desifrelenen mesaj plaintext2 dosyasina yazilir
-    plaintext2.write(str(mesaj))
+    plaintext2 = open("plaintext2", "w") # The decrypted message is written to the plaintext2 file
+    plaintext2.write(str(message))
     plaintext2.close()
 
     print("\n================================\nDecrypt:\n")
-    print("mesaj: ", mesaj)
-    print("\n** Desifreleme islemi yapildi..")
+    print("message: ", message)
+    print("\n** Decryption is done..")
 
     plaintext = open("plaintext", "r")
     plaintext2 = open("plaintext2", "r")
 
-    icerik = plaintext.readline()
-    icerik2 = plaintext2.readline()
+    content = plaintext.readline()
+    content2 = plaintext2.readline()
 
     plaintext.close()
     plaintext2.close()
 
-    if (icerik == icerik2):
-        print("\n================================\nKONTROL:\n\nYapilan sifreleme ve desifreleme islemleri dogrudur..")
+    if (content == content2):
+        print("\n================================\nControl:\n\nEncryption and decryption processes are correct..")
 
 
 
-# PAILLIER SIFRELEMESI CALISTIRMA #
+# RUNNING PAILLIER CRYPTOSYSTEM #
 
-print("PAILLIER SIFRELEMESI\n================================\n")
+print("PAILLIER CRYPTOSYSTEM\n================================\n")
 
-mesaj = input("Sifrelenecek mesaj: ")
+message = input("Enter message to be encrypted: ")
 
 plaintext = open("plaintext", "w")
-plaintext.write(str(mesaj))
+plaintext.write(str(message))
 plaintext.close()
 
-print("""\n================================\n\nKullanilacak Fonksiyonlar:\n\n- keygen(n)\n- encrypt("plaintext", "publickey.txt")\n- decrypt("ciphertext", "privatekey.txt")\n\n================================\n""")
+print("""\n================================\n\nOptions:\n\n- keygen(n)\n- encrypt("plaintext", "publickey.txt")\n- decrypt("ciphertext", "privatekey.txt")\n\n================================\n""")
 
-n = int(input("Bit sayisini giriniz: "))
+n = int(input("Enter the number of bits: "))
 print("\n================================")
 keygen(n)
 encrypt("plaintext", "publickey.txt")
